@@ -8,19 +8,32 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
 @Service
 public class RoleServiceImpl implements RoleService {
 
-    @Autowired
     private RoleRepository roleRepository;
 
+    @Autowired
+    public RoleServiceImpl(RoleRepository roleRepository) {
+        this.roleRepository = roleRepository;
+    }
+
+    public RoleServiceImpl() {
+    }
+
     @Override
- @Transactional
+    @Transactional
     public Set<Role> getAllRoles() {
         return new HashSet<>((Collection) roleRepository.findAll());
     }
 
+    @Transactional
+    public Set<Role> getRolesByIds(List<Long> ids) {
+        List<Role> roles = (List<Role>) roleRepository.findAllById(ids);
+        return new HashSet<>(roles);
+    }
 }

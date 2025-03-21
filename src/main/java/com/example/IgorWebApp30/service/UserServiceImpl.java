@@ -2,6 +2,7 @@ package com.example.IgorWebApp30.service;
 
 
 
+import com.example.IgorWebApp30.model.Role;
 import com.example.IgorWebApp30.model.User;
 import com.example.IgorWebApp30.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -10,6 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -23,7 +26,6 @@ public class UserServiceImpl implements UserService {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
-
 
     @Override
     @Transactional
@@ -55,5 +57,17 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void deleteUser(long id) {
         userRepository.deleteById(id);
+    }
+
+    @Transactional
+    public User getUserByUsername(String username) {
+     return userRepository.getUserByUsername(username);
+    }
+
+    @Override
+    @Transactional
+    public String getRolesToString(Set<Role> roles) {
+        String rolesString = roles.stream().map(Role::getName).collect(Collectors.joining(","));
+        return rolesString;
     }
 }

@@ -1,6 +1,8 @@
 package com.example.IgorWebApp30.configs;
 
+import com.example.IgorWebApp30.repository.RoleRepository;
 import com.example.IgorWebApp30.repository.UserRepository;
+import com.example.IgorWebApp30.service.RoleService;
 import com.example.IgorWebApp30.service.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +33,9 @@ public class WebSecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+
+
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
