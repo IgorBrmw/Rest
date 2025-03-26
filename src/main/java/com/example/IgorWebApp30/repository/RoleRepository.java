@@ -14,6 +14,4 @@ public interface RoleRepository extends CrudRepository<Role, Long> {
     @Override
     Optional<Role> findById(Long id);
 
-    List<Role> findAllById(Long id);
-
 }

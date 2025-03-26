@@ -5,6 +5,7 @@ import com.example.IgorWebApp30.model.Role;
 import com.example.IgorWebApp30.model.User;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public interface UserService {

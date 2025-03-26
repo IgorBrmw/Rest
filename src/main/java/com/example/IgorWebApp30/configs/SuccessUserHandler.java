@@ -16,17 +16,18 @@ public class SuccessUserHandler implements AuthenticationSuccessHandler {
 
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        Authentication authentication) throws IOException {
+
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
-        for (GrantedAuthority authority : authorities) {
-            if (authority.getAuthority().equals("ROLE_ADMIN")) {
-                response.sendRedirect("/admin");
-                return;
-            } else if (authority.getAuthority().equals("ROLE_USER")) {
-                response.sendRedirect("/user");
-                return;
-            }
+
+        if (authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            response.sendRedirect("/");
+        } else {
+            response.sendRedirect("/");
         }
-        response.sendRedirect("/");
     }
+
+
 }
