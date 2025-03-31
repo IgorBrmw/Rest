@@ -1,10 +1,19 @@
 const urlPrefix = '/api';
+let currentUser = null;
 
-let currentUser = {
-  id: 1,
-  username: "admin",
-  email: "admin@mail.com",
-  roles: [{ id: 1, name: "ROLE_ADMIN" }]
+// Функция для получения текущего пользователя с сервера
+const getCurrentUser = async () => {
+  try {
+    const response = await fetch(urlPrefix + '/current-user', {
+      method: 'GET',
+      credentials: 'include' // Важно для передачи куки/сессии
+    });
+    if (!response.ok) throw new Error('Failed to fetch current user');
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching current user:', error);
+    return null;
+  }
 };
 
 let allUsers = [];
@@ -27,20 +36,54 @@ const request = async (url, method, body) => {
 
 /** Логин: отправка данных на сервер и обновление интерфейса */
 const login = async (username, password) => {
-  const userData = await request('/login', 'POST', { username, password });
-  localStorage.setItem("currentUser", JSON.stringify(userData));
-  updateDisplay();
+  try {
+    const response = await fetch(urlPrefix + '/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+      credentials: 'include' // Для сохранения сессии
+    });
+
+    if (!response.ok) throw new Error('Login failed');
+
+    // После успешного логина получаем текущего пользователя
+    currentUser = await getCurrentUser();
+    updateDisplay();
+  } catch (error) {
+    console.error('Login error:', error);
+    alert('Login failed: ' + error.message);
+  }
 };
 
 /** Выход: очистка данных и обновление интерфейса */
-const logout = () => {
-  localStorage.removeItem("currentUser");
-  removeEventListeners();
-  updateDisplay();
+const logout = async () => {
+  try {
+    await fetch(urlPrefix + '/logout', {
+      method: 'POST',
+      credentials: 'include'
+    });
+    localStorage.removeItem("currentUser");
+    currentUser = null;
+    removeEventListeners();
+    window.location.reload();
+  } catch (error) {
+    console.error('Logout error:', error);
+  }
 };
 
 /** Проверка авторизации */
-const checkAuth = () => !!localStorage.getItem("currentUser");
+const checkAuth = async () => {
+  try {
+    const user = await getCurrentUser();
+    if (user) {
+      currentUser = user;
+      return true;
+    }
+    return false;
+  } catch (error) {
+    return false;
+  }
+};
 
 /** Обновление отображения в зависимости от состояния авторизации */
 function updateDisplay() {
@@ -50,20 +93,24 @@ function updateDisplay() {
   const sidebar = document.getElementById('sidebar');
   const loginForm = document.getElementById('loginForm');
 
-  // Функция обработки отправки формы логина
   const loginHandler = async (e) => {
     e.preventDefault();
     const formData = new FormData(loginForm);
     await login(formData.get("username"), formData.get("password"));
   };
 
-  if (checkAuth()) {
+  if (currentUser) {
     loginFormContainer.style.display = 'none';
     mainContent.style.display = 'block';
     navbar.style.display = 'block';
     sidebar.style.display = 'block';
+
+    const isAdmin = currentUser.roles.some(role => role.name === "ROLE_ADMIN");
+    document.getElementById('adminLink').style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('userLink').style.display = 'block';
+
     loginForm.removeEventListener('submit', loginHandler);
-    initContent();
+    initContent(); // <-- Запускаем инициализацию контента
   } else {
     loginFormContainer.style.display = 'flex';
     mainContent.style.display = 'none';
@@ -90,17 +137,61 @@ const getRoles = async () => {
 
 /** Инициализация данных и отображения */
 const init = async () => {
-  await getRoles();
-  await getUsers();
+  const isAuthenticated = await checkAuth();
+  if (isAuthenticated) {
+    await getRoles();
+    await getUsers();
+    initContent();
+    document.getElementById('adminLink').click();
+  }
   updateDisplay();
 };
 
 /** Инициализация контента для авторизованных пользователей */
+function updateUserInfoTable() {
+  if (!currentUser) return;
+
+  const tbody = document.querySelector('#userPanel #userInfoTable');
+  if (!tbody) return; // Если таблицы нет, выходим
+
+  const rolesText = currentUser.roles.map(r => r.name).join(', ');
+  tbody.innerHTML = `
+    <tr>
+      <td>${currentUser.id}</td>
+      <td>${currentUser.username}</td>
+      <td>${currentUser.email}</td>
+      <td>${rolesText}</td>
+    </tr>
+  `;
+}
 function initContent() {
   updateUserInfoDisplay();
   populateRolesSelect();
   populateEditRolesSelect();
   populateUsersTable();
+
+  const isAdmin = currentUser?.roles.some(role => role.name === "ROLE_ADMIN");
+
+  // Изначально скрываем обе панели
+  document.getElementById('adminPanel').style.display = 'none';
+  document.getElementById('userPanel').style.display = 'none';
+
+  // Обновляем таблицу User Information
+  updateUserInfoTable();
+
+  // В зависимости от роли показываем нужную панель
+  if (isAdmin) {
+    document.getElementById('adminPanel').style.display = 'block';
+    // Активируем вкладку Admin
+    document.getElementById('adminLink').classList.add('active');
+    document.getElementById('userLink').classList.remove('active');
+  } else {
+    document.getElementById('userPanel').style.display = 'block';
+    // Активируем вкладку User
+    document.getElementById('userLink').classList.add('active');
+    document.getElementById('adminLink').classList.remove('active');
+  }
+
   setupEventListeners();
 }
 
@@ -230,20 +321,10 @@ const adminLinkFn = (e) => {
 
 const userLinkFn = (e) => {
   e.preventDefault();
-  document.getElementById('userPanel').style.display = 'block';
   document.getElementById('adminPanel').style.display = 'none';
+  document.getElementById('userPanel').style.display = 'block';
   e.target.classList.add('active');
   document.getElementById('adminLink').classList.remove('active');
-  const tbody = document.getElementById('userInfoTable');
-  const rolesText = currentUser.roles.map(r => r.name).join(', ');
-  tbody.innerHTML = `
-    <tr>
-      <td>${currentUser.id}</td>
-      <td>${currentUser.username}</td>
-      <td>${currentUser.email}</td>
-      <td>${rolesText}</td>
-    </tr>
-  `;
 };
 
 /** Обработчик кликов по кнопкам Edit/Delete в таблице пользователей */
@@ -272,12 +353,18 @@ const logoutFn = (e) => {
 
 /** Настройка всех слушателей событий */
 const setupEventListeners = () => {
-  document.getElementById('adminLink').addEventListener('click', adminLinkFn);
+  const isAdmin = currentUser && currentUser.roles.some(role => role.name === "ROLE_ADMIN");
+
+  if (isAdmin) {
+    document.getElementById('adminLink').addEventListener('click', adminLinkFn);
+    document.getElementById('newUserForm').addEventListener('submit', postNewUser);
+    document.querySelector('#usersTable tbody').addEventListener('click', userTableHandler);
+    document.getElementById('editUserForm').addEventListener('submit', editUser);
+    document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDeleteFn);
+  }
+
+  // Эти слушатели для всех пользователей
   document.getElementById('userLink').addEventListener('click', userLinkFn);
-  document.getElementById('newUserForm').addEventListener('submit', postNewUser);
-  document.querySelector('#usersTable tbody').addEventListener('click', userTableHandler);
-  document.getElementById('editUserForm').addEventListener('submit', editUser);
-  document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDeleteFn);
   document.getElementById('logoutForm').addEventListener('submit', logoutFn);
 };
 
@@ -319,9 +406,10 @@ const openDeleteModal = (userId) => {
 
 /** Инициализация после загрузки страницы */
 document.addEventListener('DOMContentLoaded', async () => {
-  await init();
-  if (checkAuth()) {
-    initContent();
-    document.getElementById('adminLink').click();
+  const isAuthenticated = await checkAuth();
+  if (isAuthenticated) {
+    await getRoles();
+    await getUsers();
   }
+  updateDisplay();
 });

@@ -15,9 +15,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -52,19 +50,19 @@ public class RestController {
     }
 
     @PostMapping("/users")
-    public ResponseEntity<User> addUser(@RequestBody User user, BindingResult bindingResult) {
-       userService.saveUser(user);
-       return new ResponseEntity<>(user, HttpStatus.CREATED);
+    public ResponseEntity<User> addUser(@RequestBody User user) {
+        userService.saveUser(user);
+        return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
 
     @PutMapping("/users/{id}")
     public ResponseEntity<DataInfoHandler> updateUser(@PathVariable("id") Long id, @RequestBody User user
-    , BindingResult bindingResult) {
+            , BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             String error = bindingResult.getFieldError().getDefaultMessage();
             return new ResponseEntity<>(new DataInfoHandler(error), HttpStatus.BAD_REQUEST);
         }
-        try{
+        try {
             userService.updateUser(user);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (DataIntegrityViolationException e) {
@@ -106,8 +104,6 @@ public class RestController {
         response.put("id", user.getId());
         response.put("username", user.getUsername());
         response.put("email", user.getEmail());
-
-        // Преобразуем роли в удобный для фронтенда формат
         List<Map<String, Object>> roles = user.getRoles().stream()
                 .map(role -> {
                     Map<String, Object> roleMap = new HashMap<>();
@@ -121,5 +117,6 @@ public class RestController {
 
         return ResponseEntity.ok(response);
     }
+
 
 }

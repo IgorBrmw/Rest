@@ -9,4 +9,5 @@ import java.util.Set;
 public interface RoleService {
     Iterable<Role> getAllRoles();
     Set<Role> getRolesByIds(List<Long> ids);
+    Role getRoleByName(String roleName);
 }

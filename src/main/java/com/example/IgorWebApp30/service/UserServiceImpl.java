@@ -1,18 +1,16 @@
 package com.example.IgorWebApp30.service;
 
 
-
 import com.example.IgorWebApp30.model.Role;
 import com.example.IgorWebApp30.model.User;
+import com.example.IgorWebApp30.repository.RoleRepository;
 import com.example.IgorWebApp30.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -21,16 +19,25 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RoleService roleService;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleService roleService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.roleService = roleService;
     }
 
     @Override
     @Transactional
     public void saveUser(User user) {
+        // Получаем управляемые роли из базы
+        Set<Role> managedRoles = user.getRoles().stream()
+                .map(role -> roleService.getRoleByName(role.getName()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        user.setRoles(managedRoles);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
     }
@@ -63,7 +70,7 @@ public class UserServiceImpl implements UserService {
 
     @Transactional
     public User getUserByUsername(String username) {
-     return userRepository.getUserByUsername(username);
+        return userRepository.getUserByUsername(username);
     }
 
     @Override
