@@ -52,37 +52,26 @@ public class RestController {
     @PostMapping("/users")
     public ResponseEntity<User> addUser(@RequestBody User user) {
         userService.saveUser(user);
-        return new ResponseEntity<>(user, HttpStatus.CREATED);
+        return  ResponseEntity.ok(user);
     }
 
     @PutMapping("/users/{id}")
-    public ResponseEntity<DataInfoHandler> updateUser(@PathVariable("id") Long id, @RequestBody User user
-            , BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            String error = bindingResult.getFieldError().getDefaultMessage();
-            return new ResponseEntity<>(new DataInfoHandler(error), HttpStatus.BAD_REQUEST);
-        }
-        try {
+    public ResponseEntity<?> updateUser(@PathVariable("id") Long id, @RequestBody User user) {
             userService.updateUser(user);
-            return new ResponseEntity<>(HttpStatus.OK);
-        } catch (DataIntegrityViolationException e) {
-            throw new UserWithSuchLoginExist("There is already a user with the login exist");
-        }
+            return ResponseEntity.ok(user);
     }
 
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<DataInfoHandler> deleteUser(@PathVariable int id) {
-
+    public ResponseEntity<?> deleteUser(@PathVariable int id) {
         User user = userService.getUserById(id);
         if (user == null) {
             System.out.println("User with id " + id + " not found");
             throw new NoSuchUserException("There is no user with id=" + id
                     + " in database");
         }
-
         userService.deleteUser(id);
-        System.out.println("deleted");
-        return new ResponseEntity<>(new DataInfoHandler("User with id " + id + " deleted"), HttpStatus.OK);
+        return ResponseEntity.ok().body(user);
+
     }
 
     @GetMapping("/roles")

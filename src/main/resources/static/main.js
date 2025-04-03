@@ -201,7 +201,6 @@ const deleteModal = new bootstrap.Modal(document.getElementById('deleteUserModal
 
 /** Добавление нового пользователя */
 const postNewUser = async function(e) {
-  e.preventDefault();
   const formData = new FormData(this);
   const r = allRoles.filter(r => formData.getAll('roleIds').includes(r.id.toString()))
   const roles = r.map((role) => {
@@ -210,10 +209,7 @@ const postNewUser = async function(e) {
       name: role.name,
     };
   })
-
   console.log(r, roles);
-  
-
   const userData = {
     username: formData.get('username'),
     email: formData.get('email'),
@@ -223,6 +219,7 @@ const postNewUser = async function(e) {
   const newUser = await request("/users", "POST", userData);
   allUsers.push(newUser);
   this.reset();
+  initContent();
   populateUsersTable();
 };
 
@@ -235,21 +232,25 @@ const deleteUser = async (userId) => {
 
 /** Редактирование пользователя */
 const editUser = async function(e) {
-  e.preventDefault();
-  const formData = new FormData(this);
-  const userId = parseInt(formData.get('id'));
-  const userData = {
-    id: userId,
-    username: formData.get("username"),
-    email: formData.get("email"),
-    password: formData.get("password"),
-    roles: allRoles.filter(r => formData.getAll('roleIds').includes(r.id.toString()))
-  };
-  const editedUser = await request(`/users/${userId}`, "PUT", userData);
-  allUsers = allUsers.map(user => user.id === userId ? editedUser : user);
-  populateUsersTable();
-  this.reset();
-  editModal.hide();
+  try {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const userId = parseInt(formData.get('id'));
+    const userData = {
+      id: userId,
+      username: formData.get("username"),
+      email: formData.get("email"),
+      password: formData.get("password"),
+      roles: allRoles.filter(r => formData.getAll('roleIds').includes(r.id.toString()))
+    };
+    const editedUser = await request(`/users/${userId}`, "PUT", userData);
+    allUsers = allUsers.map(user => user.id === userId ? editedUser : user);
+    populateUsersTable();
+    this.reset();
+    editModal.hide();
+  } catch (error){
+    alert(error.message);
+  }
 };
 
 /** Заполнение таблицы пользователей */
