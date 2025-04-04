@@ -1,17 +1,13 @@
 package com.example.IgorWebApp30.controllers;
 
-import com.example.IgorWebApp30.exception_handling.DataInfoHandler;
 import com.example.IgorWebApp30.exception_handling.NoSuchUserException;
-import com.example.IgorWebApp30.exception_handling.UserWithSuchLoginExist;
 import com.example.IgorWebApp30.model.Role;
 import com.example.IgorWebApp30.model.User;
 import com.example.IgorWebApp30.service.RoleService;
 import com.example.IgorWebApp30.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -19,15 +15,15 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
-@org.springframework.web.bind.annotation.RestController
+@RestController
 @RequestMapping("/api")
-public class RestController {
+public class MyRestController {
 
     private final UserService userService;
     private final RoleService roleService;
 
     @Autowired
-    public RestController(UserService userService, RoleService roleService) {
+    public MyRestController(UserService userService, RoleService roleService) {
         this.userService = userService;
         this.roleService = roleService;
     }
